@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="jp">
+  <head>
+    <meta charset="utf-8" />
+<title>MySQL のインデックスの仕組み調べてみた</title>
+<meta name="description" 
+      content="MySQL のインデックスの仕組み調べてみた"
+>
+
+  
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3BRQ10LEV9"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-3BRQ10LEV9');
+  </script>
+  
+
+
+
+
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link
+  rel="alternate"
+  type="application/rss+xml"
+  href="https://7riatsu.com/index.xml"
+  title="7riatsu blog"
+/>
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="MySQL のインデックスの仕組み調べてみた"/>
+<meta name="twitter:description" content="MySQL のインデックスの仕組み調べてみた"/>
+
+
+
+<link rel="stylesheet" href="https://7riatsu.com/fontawesome/css/all.min.css" />
+
+
+
+
+<link
+  crossorigin="anonymous"
+  href="/css/styles.min.css"
+  integrity=""
+  rel="preload stylesheet"
+  as="style"
+/>
+
+
+
+
+<link
+  id="dark-mode-theme"
+  crossorigin="anonymous"
+  href="/css/dark.min.css"
+  integrity=""
+  rel="preload stylesheet"
+  as="style"
+/>
+
+
+<script>
+  var darkTheme = document.getElementById('dark-mode-theme')
+  var storedTheme = localStorage.getItem('dark-mode-storage')
+
+  if (storedTheme === 'dark') {
+    darkTheme.disabled = false
+  } else if (storedTheme === 'light') {
+    darkTheme.disabled = true
+  }
+</script>
+
+
+<script defer crossorigin="anonymous" src="/js/theme.js" integrity=""></script>
+
+
+<script defer crossorigin="anonymous" src="/js/instantpage.min.js" integrity=""></script><meta name="generator" content="Hugo 0.99.1" />
+  </head>
+  <body>
+    
+  
+
+
+
+
+  <header>
+    <nav class="navbar">
+  <div class="nav">
+    
+      <a href="https://7riatsu.com/" class="nav-logo">
+        <img
+          src="https://7riatsu.com/images/icon.png"
+          width="50"
+          height="50"
+          alt="Logo"
+        />
+      </a>
+    
+
+    <ul class="nav-links">
+      
+        
+          <li>
+            <a href="/about/" id="About"
+              ><em class="fas fa-user fa-lg"></em
+            ></a>
+          </li>
+          
+      
+        
+          <li>
+            <a href="/tags/" id="Tags"
+              ><em class="fas fa-tag fa-lg"></em
+            ></a>
+          </li>
+          
+      
+        
+          <li>
+            <a href="/search/" id="Search"
+              ><em class="fas fa-search fa-lg"></em
+            ></a>
+          </li>
+          
+      
+    </ul>
+  </div>
+</nav>
+
+    <div class="intro-header">
+      <div class="container">
+        <div class="post-heading">
+          
+            <h1>
+              MySQL のインデックスの仕組み調べてみた
+            </h1>
+          
+          
+            <span class="meta-post">
+  <em class="fa fa-calendar-alt"></em
+  >&nbsp;Dec 17, 2021
+  
+</span>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+  
+
+    
+  <div class="container" role="main">
+    <article class="article" class="blog-post">
+      
+  <p>こんにちは <a href="https://twitter.com/7riatsu">@7riatsu</a> です。</p>
+<p>今回は、サーバーの開発をする上で必須知識と言っても過言ではないデータベースのインデックスについて調べてみました。</p>
+<p>この記事を読むことで次の項目を理解できます。</p>
+<ul>
+<li>インデックスとは何か</li>
+<li>大規模なサービス開発をする上で、インデックスを適切に使うことの重要性</li>
+<li>SQL が実行され、データアクセスするまでの流れ</li>
+<li>MySQL がどのようにインデックスを用いるか調べる方法</li>
+<li>遅いクエリを生み出さないために押さえるべきポイント</li>
+</ul>
+<p>なお、本記事は <a href="https://qiita.com/advent-calendar/2020/dena-21-shinsotsu">DeNA 21新卒×22新卒内定者 Advent Calendar 2021</a> の17日目の投稿です。</p>
+<h2 id="前提">前提</h2>
+<p>今回、インデックスについて調べるにあたって議論の対象とするデータベースを MySQL としています。
+データベースによって違いがある部分もあるため、その点ご留意ください。</p>
+<h2 id="インデックスとは">インデックスとは</h2>
+<p>インデックスとは、特定のカラム値のある行をすばやく見つけるために使用するデータ構造のことです。</p>
+<ul>
+<li>インデックスが張られている場合: テーブルのシークする箇所を絞ることが可能</li>
+<li>インデックスが張られていない場合: テーブルの全てのレコードを参照する必要がある</li>
+</ul>
+<p>MySQL ではほとんどのインデックスのデータ構造に B-tree というデータ構造が採用されています。B-tree はデータベースのインデックスに一般的に利用されるツリー型のデータ構造のことです。（B-tree の詳しい説明は今回触れません。）
+※例外として MEMORY テーブルはハッシュインデックスもサポートしています。</p>
+<p>現実世界におけるインデックスの例として「辞書」を考えてみます。辞書は通常、アルファベット順や五十音順にソートされ、末尾の索引（インデックス）にはどのページにどの単語が書かれているか記載してあります。探したい単語を最初のページから1ページずつ順番に探すよりも、末尾の索引を参照しどのページに探している単語が書かれているかを把握した上で探した方が早く情報に辿り着けることは明らかです。</p>
+<p>データベースも現実世界と類似の挙動をします。インデックスがある場合は、インデックスファイルからデータファイルのどのあたりを参照したら良いかを絞れるため、高速な処理を実現できます。
+逆に、インデックスがない場合は、データファイルのどのあたりを参照したら良いか絞れないため、テーブル全体をシークする必要があります。これはフルテーブルスキャンといい、最も時間のかかる処理です。</p>
+<h2 id="インデックスの重要性">インデックスの重要性</h2>
+<p>サービスの規模が大きくなればなるほど、テーブルのレコード数は多くなり、インデックスを適切に使うことの重要性は増します。</p>
+<p>例えばテーブルのレコード数が100行しかないサービスでは、フルテーブルスキャンをしたところでかかる処理時間はたかが知れています。むしろインデックスを利用するよりもテーブル全体をシークした場合の方がかかる時間が少ないことすらあります。</p>
+<p>しかし、テーブルのレコード数がXX万~YY億行もあるサービスでは、フルテーブルスキャンをしてしまうと1クエリあたりにかかる計算資源（CPU やメモリなど）と処理時間が膨大となります。
+そのような重たいクエリが短時間にたくさん発行されるとデータベースの負荷が高まり、データベース起因の障害発生の可能性が高まります。</p>
+<p>大規模なサービスの開発・運用をする際は、インデックスを適切に利用することがより高水準で求められます。</p>
+<h2 id="sql-がデータアクセスするまでの流れとインデックスの仕組み">SQL がデータアクセスするまでの流れとインデックスの仕組み</h2>
+<h3 id="sql-がデータアクセスするまでの流れ">SQL がデータアクセスするまでの流れ</h3>
+<p>次に、SQL が実行され、データアクセスするまでの流れについてお伝えします。</p>
+<figure><img src="images/query_processing.png"
+         alt="クエリ処理の流れ" width="100%"/>
+</figure>
+
+<ol>
+<li>「パーサ」が構文解析を行いクエリを処理しやすい形に変換</li>
+<li>「オプティマイザ」が「①選択可能な実行計画を複数作成し」「②各実行計画のコストを計算」する</li>
+<li>「カタログマネージャー」がオプティマイザに統計情報を提供</li>
+<li>「プラン評価」最適な実行計画を選択</li>
+</ol>
+<p>1~4 について、それぞれもう少し深掘りして解説します。</p>
+<h4 id="1-パーサ">1. パーサ</h4>
+<p>パーサでは SQL を構文解析し、MySQL が処理しやすい形に処理をします。この段階では、二つの役割を果たします。</p>
+<p>まず一つ目は、入力された SQL が構文的に正しいか検証する役割です。構文的に誤った入力がされた場合、この段階で処理を打ち切ります。</p>
+<p>次に二つ目は、入力された SQL を定型的な形に変換する役割です。これにより、効率的に以降の処理を MySQL が行えます。</p>
+<h4 id="2-オプティマイザ">2. オプティマイザ</h4>
+<p>オプティマイザでは最適なデータアクセスの方法を決定する役割を担います。オプティマイザは</p>
+<ul>
+<li>①インデックスの有無やテーブルの統計情報などをもとに、選択可能な実行計画を複数作成し</li>
+<li>②各実行計画のコストを計算</li>
+</ul>
+<p>します。実行計画とは、使用するインデックスやテーブルの結合順序など、クエリを実行しデータアクセスする際の方法のことです。</p>
+<p>オプティマイザがどのようにインデックスを使用してクエリを実行するか決定するため、とても重要な役割と言えます。</p>
+<h4 id="3-カタログマネージャ">3. カタログマネージャ</h4>
+<p>カタログマネージャはオプティマイザが実行計画を立てるために必要な統計情報を提供します。</p>
+<ul>
+<li>統計情報の例
+<ul>
+<li>インデックス情報</li>
+<li>レコード数</li>
+<li>テーブルカラム内のNULLの数</li>
+<li>カーディナリティ（テーブルカラム内の異なる値の数）</li>
+</ul>
+</li>
+</ul>
+<h4 id="4-プラン評価">4. プラン評価</h4>
+<p>プラン評価はオプティマイザの立てた複数の実行計画から、最適な実行計画を選択します。</p>
+<h2 id="mysql-がどのようにインデックスを用いるか調べる方法">MySQL がどのようにインデックスを用いるか調べる方法</h2>
+<p>ここまでの内容で、SQL が実行された際に MySQL がどのようインデックスを決定してデータアクセスするかを説明しました。
+ここからは、具体的に MySQL がどのようにインデックスを決定するか調べる方法について説明していきます。</p>
+<h3 id="explain">EXPLAIN</h3>
+<p><code>EXPLAIN</code> とは MySQL がクエリをどのように実行するかを調べるためのステートメントです。
+MySQL 5.6.3 以降は <code>SELECT</code>, <code>UPDATE</code>, <code>DELETE</code>, <code>INSERT</code>, <code>REPLACE</code> ステートメントにおいて EXPLAIN を実行できます。</p>
+<p>これらのステートメントにおいて EXPLAIN を先頭につけて実行すると、MySQL はオプティマイザからの実行計画に関する情報を表示します。
+開発をするときに実行されるクエリを EXPLAIN してみて、インデックスが適切に用いられるクエリになっているかを確認するようにしましょう。</p>
+<p>例えば、users テーブルに対して <code>created_at</code> が 2021年12月1日 以降に作成されたデータを取得するクエリを投げる場合に使われるインデックスを調べたい場合は、以下のように SELECT ステートメントの前に EXPLAIN を追加して実行します。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">EXPLAIN</span> <span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> users <span style="color:#66d9ef">WHERE</span> created_at <span style="color:#f92672">&gt;=</span> <span style="color:#e6db74">&#39;2021-12-01T00:00:00+09:00&#39;</span>;</span></span></code></pre></div>
+<p>前提として、オプティマイザは統計情報を用いて実行計画を立てるので、本番環境または本番環境と同様のデータが入っている環境で EXPLAIN する必要があります。
+そうしなければ、本番環境でクエリが実行される際に想定と異なる挙動をすることがあります。</p>
+<p>実際に自分が遭遇した現象として、少ないデータ数しかない開発環境上で EXPLAIN をしたところ、インデックスが想定通りの挙動をせず、適切に使われていませんでした。
+これは、データ数が少なすぎると、インデックスを用いずにクエリを実行した方が実行効率が良く、EXPLAIN にもインデックスを用いない実行計画の情報が表示されることがあるためです。
+本番環境上で同様のクエリに対して EXPLAIN をしたところ、想定通りのインデックスが用いられていることを確認できました。</p>
+<p>正しい結果を得るために、本番環境または本番環境と同様のデータが入っている環境で EXPLAIN するようにしましょう。</p>
+<h3 id="explain-の見方">EXPLAIN の見方</h3>
+<p>EXPLAIN をした際に表示される項目は以下の通りです。（出典: <a href="https://dev.mysql.com/doc/refman/8.0/ja/explain-output.html">MySQL 8.0 リファレンスマニュアル</a>）</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">カラム</th>
+<th style="text-align:left">説明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">id</td>
+<td style="text-align:left">SELECT 識別子</td>
+</tr>
+<tr>
+<td style="text-align:left">select_type</td>
+<td style="text-align:left">SELECT の種類</td>
+</tr>
+<tr>
+<td style="text-align:left">table</td>
+<td style="text-align:left">出力行のテーブル</td>
+</tr>
+<tr>
+<td style="text-align:left">partitions</td>
+<td style="text-align:left">一致するパーティション</td>
+</tr>
+<tr>
+<td style="text-align:left">type</td>
+<td style="text-align:left">結合型</td>
+</tr>
+<tr>
+<td style="text-align:left">possible_keys</td>
+<td style="text-align:left">選択可能なインデックス</td>
+</tr>
+<tr>
+<td style="text-align:left">key</td>
+<td style="text-align:left">実際に選択されたインデックス</td>
+</tr>
+<tr>
+<td style="text-align:left">key_len</td>
+<td style="text-align:left">選択されたキーの長さ</td>
+</tr>
+<tr>
+<td style="text-align:left">ref</td>
+<td style="text-align:left">インデックスと比較されるカラム</td>
+</tr>
+<tr>
+<td style="text-align:left">rows</td>
+<td style="text-align:left">調査される行の見積もり</td>
+</tr>
+<tr>
+<td style="text-align:left">filtered</td>
+<td style="text-align:left">テーブル条件によってフィルタ処理される行の割合</td>
+</tr>
+<tr>
+<td style="text-align:left">Extra</td>
+<td style="text-align:left">追加情報</td>
+</tr>
+</tbody>
+</table>
+<p>一つ一つの項目については今回触れないので、気になる方は出典元の <a href="https://dev.mysql.com/doc/refman/8.0/ja/explain-output.html">「MySQL 8.0 リファレンスマニュアル」</a> を参照してください。</p>
+<p>この中で普段開発する時に見ると良さそうなところをピックアップします。</p>
+<h4 id="type">type</h4>
+<p>テーブルの結合方法を示します。</p>
+<p>最も適切なものから不適切なものにかけて代表例を説明していきます。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">種類</th>
+<th style="text-align:left">説明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">const</td>
+<td style="text-align:left">一致するレコードが一行のみ。非常に高速。</td>
+</tr>
+<tr>
+<td style="text-align:left">eq_ref</td>
+<td style="text-align:left">結合時にインデックスの全てのパートが使用されており、かつインデックスは PRIMARY KEY または UNIQUE NOT NULL の場合。const の次の高速。</td>
+</tr>
+<tr>
+<td style="text-align:left">ref</td>
+<td style="text-align:left">ユニークではないインデックスを用いて等価検索(WHERE)を行った場合。</td>
+</tr>
+<tr>
+<td style="text-align:left">range</td>
+<td style="text-align:left">インデックスを用いて範囲検索(WHERE BETWEEN AND)した場合。</td>
+</tr>
+<tr>
+<td style="text-align:left">index</td>
+<td style="text-align:left">インデックス全体をスキャンする場合。フルインデックススキャン。かなり遅い。</td>
+</tr>
+<tr>
+<td style="text-align:left">ALL</td>
+<td style="text-align:left">テーブル全体をスキャンする場合。フルテーブルスキャン。最も遅い。</td>
+</tr>
+</tbody>
+</table>
+<p>const, eq_ref, ref, range あたりが出ていれば大丈夫そうです。逆に index, ALL が表示されている場合はクエリを見直すかテーブル設計を見直す必要がありそうです。</p>
+<h4 id="possible_keys">possible_keys</h4>
+<p>このテーブル内の行検索に使用可能なインデックスを示します。NULL が表示されている場合、関連するインデックスがないことを示します。</p>
+<h4 id="key">key</h4>
+<p>MySQL が実際に使用を決定したインデックスを示します。基本的に possible_keys のいずれかから選択される形となります。
+ここに自分が意図した通りのインデックスが表示されていることを確認できれば大丈夫です。</p>
+<h4 id="key_len">key_len</h4>
+<p>MySQL が使用を決定したキーの長さ（バイト数）を示します。複合インデックスを利用している場合、ここを見ることで、どの部分までインデックスを用いるか確認できます。</p>
+<p>例えば、id(BIGINT), user_id(BIGINT) の複合インデックスを用いたい場合は BIGINT のバイト数が 8 であることから、key_len が 16 になっていることを確認できれば大丈夫です。ここが 8 になっている場合は最初の id しか利用されず、user_id が利用されていない可能性があるので注意が必要です。</p>
+<p>データサイズに関しては<a href="https://dev.mysql.com/doc/refman/8.0/en/storage-requirements.html">「MySQL 8.0 リファレンスマニュアル」</a>を参照することで調べられます。</p>
+<h4 id="rows">rows</h4>
+<p>MySQL がクエリを実行するために調査する必要があると考える行数です。ここが大きければ大きいほど時間がかかってしまうので適切な行数になっているかどうか確認しましょう。</p>
+<h4 id="extra">Extra</h4>
+<p>MySQL がクエリを解決する方法に関する追加情報を示します。表示される可能性のある表示項目の代表例を説明していきます。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">表示項目</th>
+<th style="text-align:left">説明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Using where</td>
+<td style="text-align:left">WHERE ステートメントに検索条件が指定されている場合に表示される。</td>
+</tr>
+<tr>
+<td style="text-align:left">Using index</td>
+<td style="text-align:left">クエリがインデックスツリーの情報のみを使用して、テーブルからカラム情報が取得される。</td>
+</tr>
+<tr>
+<td style="text-align:left">Using filesort</td>
+<td style="text-align:left">これが表示されると MySQL はソート順で行を取得する方法を見つけるために、インデックスを使用してクエリを解決できない。そのため、非常に時間がかかる可能性がある。</td>
+</tr>
+<tr>
+<td style="text-align:left">Using temporary</td>
+<td style="text-align:left">クエリを解決するために一時テーブルを作成する必要があり、非常に時間がかかる可能性がある。</td>
+</tr>
+</tbody>
+</table>
+<p>クエリを高速にしたい場合は Using filesort および Using temporary の値に気をつける必要があります。</p>
+<p>Using filesort は ORDER BY をする際に、クイックソートを実行します。ソートバッファに収まる程度のデータ量であればメモリ内での処理なので極端に遅くなることはありませんが、メモリ内での処理ができないほどのデータ量になると一時テーブルを作成し、メモリと併用するようになります。ファイルの I/O 処理は一般的にメモリ処理と比べると時間がかかります。</p>
+<p>Using temporary は一時テーブルを作成して処理を行います。初めは一時テーブルを Using filesort と同様にメモリー内に保持して処理しますが、データ量が大きくなるとディスク上に格納して処理します。この処理も同様に時間がかかります。</p>
+<p>Using filesort および Using temporary が表示されている場合は改善を試みましょう。</p>
+<h2 id="終わりに">終わりに</h2>
+<p>今回の記事では以下のことを取り上げました。</p>
+<ul>
+<li>インデックスとは何か</li>
+<li>大規模なサービス開発をする上で、インデックスを適切に使うことの重要性</li>
+<li>SQL が実行され、データアクセスするまでの流れ</li>
+<li>MySQL がどのようにインデックスを用いるか調べる方法</li>
+<li>遅いクエリを生み出さないために押さえるべきポイント</li>
+</ul>
+<p>これらを理解して、必要最小限のクエリのみが発行されるように開発を心がけると良さそうです。</p>
+<p>この記事を読んで「面白かった」「学びがあった」と思っていただけた方、よろしければ Twitter やはてなブックマークにてコメントをお願いします！</p>
+<p>また、<a href="https://twitter.com/DeNAxTech">DeNA 公式 Twitter アカウント @DeNAxTech</a>では、 Blog記事だけでなく色々な勉強会での登壇資料も発信しているのでぜひフォローして下さい。</p>
+<h2 id="参照">参照</h2>
+<ul>
+<li><a href="https://dev.mysql.com/doc/refman/5.6/ja">MySQL 5.6 リファレンスマニュアル</a></li>
+<li><a href="https://dev.mysql.com/doc/refman/8.0/ja">MySQL 8.0 リファレンスマニュアル</a></li>
+<li><a href="http://nippondanji.blogspot.com/2009/03/mysqlexplain.html">漢のコンピュータ道 MySQLのEXPLAINを徹底解説!!</a></li>
+</ul>
+
+
+
+      
+        <div class="blog-tags">
+          
+            <a
+              href="https://7riatsu.com/tags/server-development/"
+              >server-development</a
+            >&nbsp;
+          
+            <a
+              href="https://7riatsu.com/tags/database/"
+              >Database</a
+            >&nbsp;
+          
+            <a
+              href="https://7riatsu.com/tags/index/"
+              >Index</a
+            >&nbsp;
+          
+            <a
+              href="https://7riatsu.com/tags/mysql/"
+              >MySQL</a
+            >&nbsp;
+          
+        </div>
+      
+
+      
+    </article>
+    
+    
+      
+
+    
+  </div>
+
+    <footer>
+  
+
+<div class="social-icons">
+  
+    
+    
+      
+      <a href="https://twitter.com/7riatsu" name="twitter">
+        <em class="fab fa-twitter"></em>
+      </a>
+    
+       &nbsp;&ndash;&nbsp;
+      <a href="https://github.com/7riatsu" name="GitHub">
+        <em class="fab fa-github"></em>
+      </a>
+    
+       &nbsp;&ndash;&nbsp;
+      <a href="https://www.linkedin.com/in/narita-atsuki/" name="Linkedin">
+        <em class="fab fa-linkedin"></em>
+      </a>
+    
+       &nbsp;&ndash;&nbsp;
+      <a href="https://www.facebook.com/narita.atsuki/" name="Facebook">
+        <em class="fab fa-facebook"></em>
+      </a>
+    
+  
+
+  
+</div>
+
+
+  
+  <div class="container">
+    <p class="credits copyright">
+      <a href="https://7riatsu.com/about">Atsuki Narita</a>
+      &nbsp;&copy;
+      2021
+      
+        &nbsp;/&nbsp;
+        <a href="https://7riatsu.com/">7riatsu blog</a>
+      
+      &nbsp;&ndash;&nbsp;
+      <em class="fas fa-moon" id="dark-mode-toggle"></em>
+    </p>
+
+    <p class="credits theme-by">
+       <a href="https://gohugo.io">Hugo</a>&nbsp;
+      
+      <a href="https://github.com/matsuyoshi30/harbor">Harbor</a>
+    </p>
+  </div>
+</footer>
+
+  </body>
+</html>
