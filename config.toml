@@ -1,0 +1,76 @@
+baseURL = "https://7riatsu.com/"
+title = "7riatsu blog"
+author = "Atsuki Narita"
+paginate = 10
+languageCode = "jp"
+DefaultContentLanguage = "jp"
+enableInlineShortcodes = true
+footnoteReturnLinkContents = "^"
+publishDir = "docs"
+# DO NOT REMOVE THIS
+theme = "harbor"
+googleAnalytics = "G-3BRQ10LEV9"
+
+[Author]
+  name = "Atsuki Narita"
+
+[permalinks]
+	post = "post/:filename/"
+	page = "/:filename/"
+
+[markup.goldmark.renderer]
+  unsafe = true
+
+[outputs]
+    section = ["JSON", "HTML"]
+
+[[params.nav]]
+  identifier = "about"
+  name = "About"
+  icon = "fas fa-user fa-lg"
+  url = "/about/"
+  weight = 3
+
+[[params.nav]]
+  identifier = "tags"
+  name = "Tags"
+  icon = "fas fa-tag fa-lg"
+  url = "/tags/"
+  weight = 3
+
+[[params.nav]]
+  identifier = "search"
+  name = "Search"
+  icon = "fas fa-search fa-lg"
+  url = "/search/"
+  weight = 3
+
+[[params.social]]
+  name= "twitter"
+  url="https://twitter.com/7riatsu"
+  icon="fab fa-twitter"
+
+[[params.social]]
+  name= "GitHub"
+  url="https://github.com/7riatsu"
+  icon="fab fa-github"
+
+[[params.social]]
+  name="Linkedin"
+  url="https://www.linkedin.com/in/narita-atsuki/"
+  icon="fab fa-linkedin"
+
+[[params.social]]
+  name="Facebook"
+  url="https://www.facebook.com/narita.atsuki/"
+  icon="fab fa-facebook"
+
+[params]
+  mainSections = ["post"]
+  favicon = "favicon.ico"
+
+  [params.logo]
+    url = "icon.png"
+    width = 50
+    height = 50
+    alt = "Logo"
