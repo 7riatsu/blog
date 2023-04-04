@@ -20,7 +20,7 @@ share: true
 - MySQL がどのようにインデックスを用いるか調べる方法
 - 遅いクエリを生み出さないために押さえるべきポイント
 
-なお、本記事は [DeNA 21新卒×22新卒内定者 Advent Calendar 2021](https://qiita.com/advent-calendar/2020/dena-21-shinsotsu) の17日目の投稿です。
+なお、本記事は [DeNA 21新卒×22新卒内定者 Advent Calendar 2021](https://qiita.com/advent-calendar/2021/dena-21x22) の17日目の投稿です。
 
 
 ## 前提
