@@ -1,17 +1,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 	<channel>
-		<title>Database on 7riatsu blog</title>
-		<link>https://7riatsu.com/tags/database/</link>
-		<description>Recent content in Database </description>
+		<title>TOEIC on 7riatsu blog</title>
+		<link>https://7riatsu.com/tags/toeic/</link>
+		<description>Recent content in TOEIC </description>
 		<generator>Hugo -- gohugo.io</generator>
 		
   		<language>jp</language>
 		
-		<managingEditor>Page(/tags/database) (Atsuki Narita)</managingEditor>
+		<managingEditor>Page(/tags/toeic) (Atsuki Narita)</managingEditor>
     	
-  		<lastBuildDate>Fri, 17 Dec 2021 00:00:00 +0900</lastBuildDate>
+  		<lastBuildDate>Tue, 04 Apr 2023 22:56:34 +0900</lastBuildDate>
 		
-		<atom:link href="/tags/database/" rel="self" type="application/rss+xml" />
+		<atom:link href="/tags/toeic/" rel="self" type="application/rss+xml" />
 		
 		<item>
 			<title>2ヶ月で英語の基礎力を鍛え、TOEICスコアを150点上げた方法</title>
