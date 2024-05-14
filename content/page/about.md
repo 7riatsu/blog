@@ -43,7 +43,7 @@ I'm Atsuki Narita, a software engineer with a strong focus on server-side develo
 - Presented at DeNA TechCon 2023, a major technology conference, discussing innovations and challenges in server-side development. The presentation titled "新卒1年目が100億レコード超のDBマイグレーションをした話" focused on the challenges and methodologies of database migration in a high-scale environment, particularly handling over 10 billion records without downtime and enhancing table indexing and partitioning to improve search speeds and overall database performance.
   - [Session details](https://techcon2023.dena.dev/session/session13/)
   - [Event article](https://logmi.jp/tech/articles/328386)
-  - [Presentation slides](https://speakerdeck.com/dena_tech/techcon2021-winter-lt5)
+  - [Presentation slides](https://speakerdeck.com/dena_tech/techcon2023-session13)
 
 ### DeNA TechCon 2021 Winter
 - Presented at DeNA TechCon 2021 Winter, focusing on recent advancements and real-world applications of backend technologies. Explored the inner workings of MySQL indexing, detailing the efficiency improvements in database searches and the impact on backend performance.
