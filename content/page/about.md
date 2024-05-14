@@ -21,6 +21,7 @@ I'm Atsuki Narita, a software engineer with a strong focus on server-side develo
 - Developed "SHAKYO.io", a learning service for beginners in programming as a product manager and software engineer using Ruby on Rails and React.
 - Collaborated with a global team in English.
 - Introduced a subscription payment feature using the Omise payment API service.
+  - [PR Times](https://prtimes.jp/main/html/rd/p/000000007.000049664.html) - This press release provides an introduction to the service.
 
 ### ANNONE, Inc. [Sep 2019 – Mar 2020]
 - Developed products in the cosmetology domain using Go, Ruby on Rails, React, and Flutter.
