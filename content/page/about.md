@@ -8,7 +8,9 @@ share: false
 I'm Atsuki Narita, a software engineer with a strong focus on server-side development.
 
 ## Experience
-### DeNA Co., Ltd. [Apr 2021 – Current]
+### Timee, Inc. [Jan 2024 - current]
+
+### DeNA Co., Ltd. [Apr 2021 – Dec 2023]
 - Built and maintained an application with over 4M downloads, requiring communication with cross-functional teams regarding product and customer success.
 - Focused on server-side development, providing mentoring and coaching to newcomers.
 - Improved server performance by redesigning large tables and tuning database queries.
