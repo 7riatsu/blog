@@ -5,7 +5,7 @@
         
             {
                 "id": 0,
-                "href": "https://7riatsu.com/about/",
+                "href": "http://localhost:1313/about/",
                 "title": "About me",
                 "section": "page",
                 "date" : "0001.01.01",
@@ -15,7 +15,17 @@
         ,
             {
                 "id": 1,
-                "href": "https://7riatsu.com/post/toeic-score-improvement/",
+                "href": "http://localhost:1313/post/2024-retrospective/",
+                "title": "something",
+                "section": "post",
+                "date" : "2024.12.27",
+                "body": "hi\n"
+            }
+    
+        ,
+            {
+                "id": 2,
+                "href": "http://localhost:1313/post/toeic-score-improvement/",
                 "title": "2ヶ月で英語の基礎力を鍛え、TOEICスコアを150点上げた方法",
                 "section": "post",
                 "date" : "2023.04.04",
@@ -24,8 +34,8 @@
     
         ,
             {
-                "id": 2,
-                "href": "https://7riatsu.com/post/mysql-indexing-mechanism/",
+                "id": 3,
+                "href": "http://localhost:1313/post/mysql-indexing-mechanism/",
                 "title": "MySQL のインデックスの仕組み調べてみた",
                 "section": "post",
                 "date" : "2021.12.17",
@@ -34,8 +44,8 @@
     
         ,
             {
-                "id": 3,
-                "href": "https://7riatsu.com/post/becoming-a-member-of-society/",
+                "id": 4,
+                "href": "http://localhost:1313/post/becoming-a-member-of-society/",
                 "title": "社会人になった所感",
                 "section": "post",
                 "date" : "2021.05.23",
@@ -44,8 +54,8 @@
     
         ,
             {
-                "id": 4,
-                "href": "https://7riatsu.com/post/new-grad-job-hunting-result/",
+                "id": 5,
+                "href": "http://localhost:1313/post/new-grad-job-hunting-result/",
                 "title": "21新卒ソフトウェアエンジニア職の就活振り返り",
                 "section": "post",
                 "date" : "2020.12.06",
@@ -54,8 +64,8 @@
     
         ,
             {
-                "id": 5,
-                "href": "https://7riatsu.com/post/hello/",
+                "id": 6,
+                "href": "http://localhost:1313/post/hello/",
                 "title": "Hello World!",
                 "section": "post",
                 "date" : "2020.09.27",

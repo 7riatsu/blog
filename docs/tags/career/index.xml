@@ -1,7 +1,7 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 	<channel>
 		<title>Career on 7riatsu blog</title>
-		<link>https://7riatsu.com/tags/career/</link>
+		<link>http://localhost:1313/tags/career/</link>
 		<description>Recent content in Career </description>
 		<generator>Hugo -- gohugo.io</generator>
 		
@@ -14,42 +14,50 @@
 		<atom:link href="/tags/career/" rel="self" type="application/rss+xml" />
 		
 		<item>
+			<title>something</title>
+			<link>http://localhost:1313/post/2024-retrospective/</link>
+			<pubDate>Fri, 27 Dec 2024 20:13:06 +0900</pubDate>
+			<guid>http://localhost:1313/post/2024-retrospective/</guid>
+			<description>hi</description>
+		</item>
+      	
+		<item>
 			<title>2ヶ月で英語の基礎力を鍛え、TOEICスコアを150点上げた方法</title>
-			<link>https://7riatsu.com/post/toeic-score-improvement/</link>
+			<link>http://localhost:1313/post/toeic-score-improvement/</link>
 			<pubDate>Tue, 04 Apr 2023 22:56:34 +0900</pubDate>
-			<guid>https://7riatsu.com/post/toeic-score-improvement/</guid>
+			<guid>http://localhost:1313/post/toeic-score-improvement/</guid>
 			<description></description>
 		</item>
       	
 		<item>
 			<title>MySQL のインデックスの仕組み調べてみた</title>
-			<link>https://7riatsu.com/post/mysql-indexing-mechanism/</link>
+			<link>http://localhost:1313/post/mysql-indexing-mechanism/</link>
 			<pubDate>Fri, 17 Dec 2021 00:00:00 +0900</pubDate>
-			<guid>https://7riatsu.com/post/mysql-indexing-mechanism/</guid>
+			<guid>http://localhost:1313/post/mysql-indexing-mechanism/</guid>
 			<description></description>
 		</item>
       	
 		<item>
 			<title>社会人になった所感</title>
-			<link>https://7riatsu.com/post/becoming-a-member-of-society/</link>
+			<link>http://localhost:1313/post/becoming-a-member-of-society/</link>
 			<pubDate>Sun, 23 May 2021 14:36:42 +0900</pubDate>
-			<guid>https://7riatsu.com/post/becoming-a-member-of-society/</guid>
+			<guid>http://localhost:1313/post/becoming-a-member-of-society/</guid>
 			<description></description>
 		</item>
       	
 		<item>
 			<title>21新卒ソフトウェアエンジニア職の就活振り返り</title>
-			<link>https://7riatsu.com/post/new-grad-job-hunting-result/</link>
+			<link>http://localhost:1313/post/new-grad-job-hunting-result/</link>
 			<pubDate>Sun, 06 Dec 2020 00:00:00 +0900</pubDate>
-			<guid>https://7riatsu.com/post/new-grad-job-hunting-result/</guid>
+			<guid>http://localhost:1313/post/new-grad-job-hunting-result/</guid>
 			<description></description>
 		</item>
       	
 		<item>
 			<title>Hello World!</title>
-			<link>https://7riatsu.com/post/hello/</link>
+			<link>http://localhost:1313/post/hello/</link>
 			<pubDate>Sun, 27 Sep 2020 20:52:41 +0900</pubDate>
-			<guid>https://7riatsu.com/post/hello/</guid>
+			<guid>http://localhost:1313/post/hello/</guid>
 			<description></description>
 		</item>
       	
