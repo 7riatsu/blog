@@ -1,17 +1,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 	<channel>
-		<title>Tags on 7riatsu blog</title>
-		<link>http://localhost:1313/tags/</link>
-		<description>Recent content in Tags </description>
+		<title>DB on 7riatsu blog</title>
+		<link>http://localhost:1313/tags/db/</link>
+		<description>Recent content in DB </description>
 		<generator>Hugo -- gohugo.io</generator>
 		
   		<language>jp</language>
 		
-		<managingEditor>Page(/tags) (Atsuki Narita)</managingEditor>
+		<managingEditor>Page(/tags/db) (Atsuki Narita)</managingEditor>
     	
   		<lastBuildDate>Thu, 20 Mar 2025 12:22:34 +0900</lastBuildDate>
 		
-		<atom:link href="/tags/" rel="self" type="application/rss+xml" />
+		<atom:link href="/tags/db/" rel="self" type="application/rss+xml" />
 		
 		<item>
 			<title>MySQL の LockWaitTimeout エラーを調査する方法</title>

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="jp">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+<title>MySQL の LockWaitTimeout エラーを調査する方法</title>
+<meta name="description" 
+      content=""
+>
+
+
+
+
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link
+  rel="alternate"
+  type="application/rss+xml"
+  href="http://localhost:1313/index.xml"
+  title="7riatsu blog"
+/>
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="MySQL の LockWaitTimeout エラーを調査する方法">
+
+
+
+<link rel="stylesheet" href="http://localhost:1313/fontawesome/css/all.min.css" />
+
+
+
+
+<link
+  crossorigin="anonymous"
+  href="/css/styles.min.css"
+  integrity=""
+  rel="preload stylesheet"
+  as="style"
+/>
+
+
+
+
+<link
+  id="dark-mode-theme"
+  crossorigin="anonymous"
+  href="/css/dark.min.css"
+  integrity=""
+  rel="preload stylesheet"
+  as="style"
+/>
+
+
+<script>
+  var darkTheme = document.getElementById('dark-mode-theme')
+  var storedTheme = localStorage.getItem('dark-mode-storage')
+
+  if (storedTheme === 'dark') {
+    darkTheme.disabled = false
+  } else if (storedTheme === 'light') {
+    darkTheme.disabled = true
+  }
+</script>
+
+
+<script defer crossorigin="anonymous" src="/js/theme.js" integrity=""></script>
+
+
+<script defer crossorigin="anonymous" src="/js/instantpage.min.js" integrity=""></script><meta name="generator" content="Hugo 0.126.2">
+  </head>
+  <body>
+    
+  
+
+
+
+
+  <header>
+    <nav class="navbar">
+  <div class="nav">
+    
+      <a href="http://localhost:1313/" class="nav-logo">
+        <img
+          src="http://localhost:1313/images/icon.png"
+          width="50"
+          height="50"
+          alt="Logo"
+        />
+      </a>
+    
+
+    <ul class="nav-links">
+      
+        
+          <li>
+            <a href="/about/" id="About"
+              ><em class="fas fa-user fa-lg"></em
+            ></a>
+          </li>
+          
+      
+        
+          <li>
+            <a href="/tags/" id="Tags"
+              ><em class="fas fa-tag fa-lg"></em
+            ></a>
+          </li>
+          
+      
+        
+          <li>
+            <a href="/search/" id="Search"
+              ><em class="fas fa-search fa-lg"></em
+            ></a>
+          </li>
+          
+      
+    </ul>
+  </div>
+</nav>
+
+    <div class="intro-header">
+      <div class="container">
+        <div class="post-heading">
+          
+            <h1>
+              MySQL の LockWaitTimeout エラーを調査する方法
+            </h1>
+          
+          
+            <span class="meta-post">
+  <em class="fa fa-calendar-alt"></em
+  >&nbsp;Mar 20, 2025
+  
+</span>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+  
+
+    
+  <div class="container" role="main">
+    <article class="article" class="blog-post">
+      
+  <h2 id="はじめに">はじめに</h2>
+<p>MySQL を使用している環境で、LockWaitTimeout エラーが発生して困った経験はないでしょうか。
+LockWaitTimeout エラーは「あるプロセスが長時間ロックを保持 → 他のプロセスがロックを取得できずにタイムアウトする」という流れで発生することが多いです。</p>
+<p>こうした問題を根本的に解決するには「長時間ロックを保持しているトランザクションを特定する」ことが第一歩となります。
+しかし、実行中のクエリであればロギングして原因調査しやすいものの、クエリが完了してしまうと追跡および調査が難しくなります。</p>
+<p>そこで、実行時間が一定の閾値（今回は 30 秒）を超えたトランザクションを検知し、ログとして残す仕組みを用意しておけば、発生時点のトランザクション情報を確認できるため、原因特定が非常にスムーズになります。</p>
+<h2 id="調査アプローチの概要">調査アプローチの概要</h2>
+<ol>
+<li>長時間実行中のトランザクションを検知してログを残すクラス（e.g. LongTransactionLogger）を用意。</li>
+<li>10 秒間隔など、一定周期で LongTransactionLogger を呼び出すジョブをバックグラウンドで実行。</li>
+<li>30 秒以上実行中のトランザクションがあれば、その情報をアプリケーションログに出力する。</li>
+<li>LockWaitTimeout エラー発生時にログを確認すれば、どのトランザクションが長時間ロックを保持していたか調査が可能。</li>
+</ol>
+<p>この仕組みにより、LockWaitTimeout エラーの原因を迅速に追跡・対策できるようになります。</p>
+<h2 id="実装例">実装例</h2>
+<p>下記は、Ruby on Rails 環境で ActiveRecord を利用しているケースを想定したサンプルコードです。
+information_schema.innodb_trx や performance_schema テーブルを参照し、実行中のトランザクションを取得しています。</p>
+<p>long_running_transactions_sql メソッドの箇所だけ流用すれば Rails 以外のどの言語でも同様の結果を得られます。参考にしてみてください。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-ruby" data-lang="ruby"><span style="display:flex;"><span><span style="color:#75715e"># frozen_string_literal: true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">LongTransactionLogger</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">LONG_RUNNING_THRESHOLD_SECONDS</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>  private_constant <span style="color:#e6db74">:LONG_RUNNING_THRESHOLD_SECONDS</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">TrxStruct</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">Struct</span><span style="color:#f92672">.</span>new(
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">:trx_id</span>, <span style="color:#e6db74">:trx_mysql_thread_id</span>, <span style="color:#e6db74">:trx_query</span>, <span style="color:#e6db74">:trx_started</span>, <span style="color:#e6db74">:duration</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">:sql_text</span>, <span style="color:#e6db74">:event_name</span>, <span style="color:#e6db74">:event_id</span>, <span style="color:#e6db74">:lock_time</span>, <span style="color:#e6db74">keyword_init</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>  )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">check_and_save_log</span>
+</span></span><span style="display:flex;"><span>    log_transactions(long_running_transactions)
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">end</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">private</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">long_running_transactions</span>
+</span></span><span style="display:flex;"><span>    results <span style="color:#f92672">=</span> <span style="color:#66d9ef">ActiveRecord</span><span style="color:#f92672">::</span><span style="color:#66d9ef">Base</span><span style="color:#f92672">.</span>connection<span style="color:#f92672">.</span>exec_query(long_running_transactions_sql)
+</span></span><span style="display:flex;"><span>    results<span style="color:#f92672">.</span>map <span style="color:#66d9ef">do</span> <span style="color:#f92672">|</span>row<span style="color:#f92672">|</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">TrxStruct</span><span style="color:#f92672">.</span>new(
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">trx_id</span>: row<span style="color:#f92672">[</span><span style="color:#e6db74">&#39;trx_id&#39;</span><span style="color:#f92672">]</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">trx_mysql_thread_id</span>: row<span style="color:#f92672">[</span><span style="color:#e6db74">&#39;trx_mysql_thread_id&#39;</span><span style="color:#f92672">]</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">trx_query</span>: row<span style="color:#f92672">[</span><span style="color:#e6db74">&#39;trx_query&#39;</span><span style="color:#f92672">]</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">trx_started</span>: row<span style="color:#f92672">[</span><span style="color:#e6db74">&#39;trx_started&#39;</span><span style="color:#f92672">]</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">duration</span>: row<span style="color:#f92672">[</span><span style="color:#e6db74">&#39;duration&#39;</span><span style="color:#f92672">]</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">sql_text</span>: row<span style="color:#f92672">[</span><span style="color:#e6db74">&#39;SQL_TEXT&#39;</span><span style="color:#f92672">]</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">event_name</span>: row<span style="color:#f92672">[</span><span style="color:#e6db74">&#39;EVENT_NAME&#39;</span><span style="color:#f92672">]</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">event_id</span>: row<span style="color:#f92672">[</span><span style="color:#e6db74">&#39;EVENT_ID&#39;</span><span style="color:#f92672">]</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">lock_time</span>: row<span style="color:#f92672">[</span><span style="color:#e6db74">&#39;LOCK_TIME&#39;</span><span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>      )
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">end</span><span style="color:#f92672">.</span>map(<span style="color:#f92672">&amp;</span><span style="color:#e6db74">:to_h</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">end</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">long_running_transactions_sql</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&lt;&lt;-SQL.squish
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74"></span>      <span style="color:#66d9ef">SELECT</span>
+</span></span><span style="display:flex;"><span>        it<span style="color:#f92672">.</span>trx_id, it<span style="color:#f92672">.</span>trx_mysql_thread_id, it<span style="color:#f92672">.</span>trx_query, it<span style="color:#f92672">.</span>trx_started,
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">TIMESTAMPDIFF</span>(<span style="color:#66d9ef">SECOND</span>, it<span style="color:#f92672">.</span>trx_started, <span style="color:#66d9ef">NOW</span>()) <span style="color:#66d9ef">AS</span> duration,
+</span></span><span style="display:flex;"><span>        esc<span style="color:#f92672">.</span>SQL_TEXT, esc<span style="color:#f92672">.</span>EVENT_NAME, esc<span style="color:#f92672">.</span>EVENT_ID, esc<span style="color:#f92672">.</span>LOCK_TIME
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">FROM</span>
+</span></span><span style="display:flex;"><span>        information_schema<span style="color:#f92672">.</span>innodb_trx it
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">LEFT</span> <span style="color:#66d9ef">JOIN</span> performance_schema<span style="color:#f92672">.</span>threads pt
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">ON</span> it<span style="color:#f92672">.</span>trx_mysql_thread_id <span style="color:#f92672">=</span> pt<span style="color:#f92672">.</span>PROCESSLIST_ID
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">LEFT</span> <span style="color:#66d9ef">JOIN</span> performance_schema<span style="color:#f92672">.</span>events_statements_history esc
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">ON</span> pt<span style="color:#f92672">.</span>THREAD_ID <span style="color:#f92672">=</span> esc<span style="color:#f92672">.</span>THREAD_ID
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">WHERE</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">TIMESTAMPDIFF</span>(<span style="color:#66d9ef">SECOND</span>, it<span style="color:#f92672">.</span>trx_started, <span style="color:#66d9ef">NOW</span>()) <span style="color:#f92672">&gt;</span> <span style="color:#75715e">#{LONG_RUNNING_THRESHOLD_SECONDS}</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">ORDER</span> <span style="color:#66d9ef">BY</span> duration <span style="color:#66d9ef">DESC</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">LIMIT</span> <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">SQL</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">end</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">log_transactions</span>(transactions)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> transactions<span style="color:#f92672">.</span>any?
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">Rails</span><span style="color:#f92672">.</span>logger<span style="color:#f92672">.</span>info(
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">event</span>: <span style="color:#e6db74">&#39;long_running_transactions&#39;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">message</span>: <span style="color:#e6db74">&#39;Detected long-running transactions&#39;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">transactions</span>: transactions
+</span></span><span style="display:flex;"><span>      )
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># ここはログが埋め尽くされる要因になるため不要な場合は除外してください</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">Rails</span><span style="color:#f92672">.</span>logger<span style="color:#f92672">.</span>info(
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">event</span>: <span style="color:#e6db74">&#39;long_running_transactions&#39;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">message</span>: <span style="color:#e6db74">&#39;No long-running transactions detected&#39;</span>
+</span></span><span style="display:flex;"><span>      )
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">end</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">end</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">end</span>
+</span></span></code></pre></div><p>innodb_trx から実行中のトランザクションを取得しつつ、threads, events_statements_history と結合してロック時間や実行中 SQL の詳細を補足しています。
+30 秒を超えるトランザクションがあれば情報をまとめてログに出力します。</p>
+<p>sql_text カラムから長時間ロックを保持しているクエリを特定します。ロックを長時間保持しているクエリさえ特定できれば、あとはアプリケーションレイヤーで問題解決を試みるだけです。
+クエリの見直しや改善、インデックス最適化、トランザクションのスコープの縮小、テーブル設計やロック粒度の最適化あたりを中心に見直すと根本解決につながる場合が多いでしょう。　</p>
+<h2 id="参照しているテーブルとカラムの解説">参照しているテーブルとカラムの解説</h2>
+<h3 id="information_schemainnodb_trx-テーブル">information_schema.innodb_trx テーブル</h3>
+<ul>
+<li><strong>innodb_trx</strong> テーブルは、現在実行中（コミットやロールバックが完了していない）の InnoDB トランザクションに関する情報を提供します。
+<ul>
+<li>trx_id: トランザクション ID</li>
+<li>trx_mysql_thread_id: トランザクションが実行されている MySQL スレッド ID</li>
+<li>trx_query: 実行中（または直近に実行した）クエリ</li>
+<li>trx_started: トランザクションが開始された日時</li>
+</ul>
+</li>
+</ul>
+<p>InnoDB で実行中のトランザクションすべてが格納されているので、まずはここから「実行中のクエリ」や「開始時間」などを取得して、どれだけ長く動いているかを確認できます。</p>
+<ul>
+<li><a href="https://dev.mysql.com/doc/refman/8.0/ja/information-schema-innodb-trx-table.html">『MySQL 公式ドキュメント INFORMATION_SCHEMA INNODB_TRX テーブル』</a></li>
+</ul>
+<h3 id="performance_schemathreads-テーブル">performance_schema.threads テーブル</h3>
+<ul>
+<li><strong>threads</strong> テーブルは、MySQL の各スレッドに関する情報を保持しています。
+<ul>
+<li>THREAD_ID: 内部で管理されるスレッドごとのユニークな ID</li>
+<li>PROCESSLIST_ID: MySQL の従来のスレッド ID（SHOW PROCESSLIST などで表示される）</li>
+</ul>
+</li>
+</ul>
+<p>innodb_trx が持つ trx_mysql_thread_id と threads の PROCESSLIST_ID を結合することで、各トランザクションを実行している MySQL スレッドにひも付けられます。</p>
+<ul>
+<li><a href="https://dev.mysql.com/doc/refman/8.0/ja/performance-schema-threads-table.html">『MySQL 公式ドキュメント スレッドテーブル』</a></li>
+</ul>
+<h3 id="performance_schemaevents_statements_history-テーブル">performance_schema.events_statements_history テーブル</h3>
+<ul>
+<li><strong>events_statements_history</strong> テーブルは、ある程度直近に実行されたステートメント（SQL 文）に関するイベント情報が履歴として格納されています。
+<ul>
+<li>THREAD_ID: ステートメントを実行したスレッドを示す</li>
+<li>SQL_TEXT: 実行された SQL の内容</li>
+<li>EVENT_NAME, EVENT_ID: 実行イベント自体を示す情報</li>
+<li>LOCK_TIME: SQL 文が行ロックなどを保持していた時間</li>
+</ul>
+</li>
+</ul>
+<p>ステートメントの履歴は大規模環境だとすぐに上書きされる可能性がありますが、長時間トランザクションであればまだ履歴に残っているため、このテーブル経由で実際の SQL やロック時間をチェックできます。</p>
+<ul>
+<li><a href="https://dev.mysql.com/doc/refman/8.0/ja/performance-schema-events-statements-history-table.html">『MySQL 公式ドキュメント events_statements_history テーブル』</a></li>
+<li><a href="https://dev.mysql.com/doc/refman/8.0/ja/performance-schema-events-statements-current-table.html">『MySQL 公式ドキュメント events_statements_current テーブル</a></li>
+</ul>
+<h2 id="ロギング時の工夫">ロギング時の工夫</h2>
+<h3 id="1-構造化ログを活用">1. 構造化ログを活用</h3>
+<ul>
+<li>JSON 形式などの構造化ログにしておけば、後から解析ツール（例：Datadog, Fluentd, Elasticsearch, BigQuery）でフィルタリング・検索しやすくなります。アプリケーションログにこのまま出力しても良いですが、transactions: の部分を JSON 化するなど、可能な限り機械可読性を高めると分析効率が向上します。</li>
+</ul>
+<h3 id="2-必要なメタデータの付与">2. 必要なメタデータの付与</h3>
+<ul>
+<li>ログには「イベント種別」「エラーコード」「SQL 実行開始時刻」などのメタデータを付与すると、問題発生時のトラブルシューティングが容易になります。たとえば environment（本番・ステージング等）や host（DB サーバー名）を入れておくのも有効です。</li>
+</ul>
+<h3 id="3-ログサイズに注意する">3. ログサイズに注意する</h3>
+<ul>
+<li>長時間トランザクションが非常に多い場合、ログが膨大になる恐れがあります。必要な情報だけを抽出し、それ以外はサマリーにとどめるなど、ログの肥大化を防ぐ工夫をしましょう。</li>
+</ul>
+<h2 id="注意点運用上のポイント">注意点・運用上のポイント</h2>
+<h3 id="1-performance_schema-有効化とオーバーヘッド">1. performance_schema 有効化とオーバーヘッド</h3>
+<ul>
+<li>performance_schema が有効になっていない場合は設定変更が必要です。また、大量の SQL を捌く環境ではオーバーヘッドが増える可能性があります。必要に応じて監視粒度（performance_schema 設定）を調整してください。</li>
+</ul>
+<h3 id="2-定期実行タスクの停止タイミング">2. 定期実行タスクの停止タイミング</h3>
+<ul>
+<li>トラブルシュートが完了したら、不要に長時間タスクを走らせないようにしましょう。フィーチャーフラグなどでオン・オフを切り替えられると便利です。</li>
+</ul>
+<h3 id="3-実行頻度の考慮">3. 実行頻度の考慮</h3>
+<ul>
+<li>監視を細かくしすぎると逆にサーバー負荷が上がる可能性があります。一方、大雑把すぎると見逃しが発生するかもしれません。環境の負荷状況や許容範囲に応じて、適切な監視間隔を設定しましょう。</li>
+</ul>
+<h3 id="4-セキュリティポリシーの確認">4. セキュリティポリシーの確認</h3>
+<ul>
+<li>実行クエリがログに出力されるので、そもそも出力して OK なのか判断してください。また、必要に応じてマスキング対応をするなどの工夫があると良いかもしれません。</li>
+</ul>
+
+
+
+      
+        <div class="blog-tags">
+          
+            <a
+              href="http://localhost:1313/tags/db/"
+              >DB</a
+            >&nbsp;
+          
+            <a
+              href="http://localhost:1313/tags/mysql/"
+              >MySQL</a
+            >&nbsp;
+          
+        </div>
+      
+
+      
+    </article>
+    
+    
+      
+
+    
+  </div>
+
+    <footer>
+  
+
+<div class="social-icons">
+  
+    
+    
+      
+      <a href="https://twitter.com/7riatsu" name="twitter">
+        <em class="fab fa-twitter"></em>
+      </a>
+    
+       &nbsp;&ndash;&nbsp;
+      <a href="https://github.com/7riatsu" name="GitHub">
+        <em class="fab fa-github"></em>
+      </a>
+    
+       &nbsp;&ndash;&nbsp;
+      <a href="https://www.linkedin.com/in/narita-atsuki/" name="Linkedin">
+        <em class="fab fa-linkedin"></em>
+      </a>
+    
+       &nbsp;&ndash;&nbsp;
+      <a href="https://www.facebook.com/narita.atsuki/" name="Facebook">
+        <em class="fab fa-facebook"></em>
+      </a>
+    
+  
+
+  
+</div>
+
+
+  
+  <div class="container">
+    <p class="credits copyright">
+      <a href="http://localhost:1313/about">Atsuki Narita</a>
+      &nbsp;&copy;
+      2025
+      
+        &nbsp;/&nbsp;
+        <a href="http://localhost:1313/">7riatsu blog</a>
+      
+      &nbsp;&ndash;&nbsp;
+      <em class="fas fa-moon" id="dark-mode-toggle"></em>
+    </p>
+
+    <p class="credits theme-by">
+       <a href="https://gohugo.io">Hugo</a>&nbsp;
+      
+      <a href="https://github.com/matsuyoshi30/harbor">Harbor</a>
+    </p>
+  </div>
+</footer>
+
+  </body>
+</html>

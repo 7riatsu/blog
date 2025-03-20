@@ -129,7 +129,7 @@
           
             <span class="meta-post">
   <em class="fa fa-calendar-alt"></em
-  >&nbsp;Dec 27, 2024
+  >&nbsp;Mar 20, 2025
   
 </span>
 
@@ -149,17 +149,26 @@
 
       
         <article class="post-preview">
-  <a href="http://localhost:1313/post/2024-retrospective/">
-    <h2 class="post-title">something</h2>
+  <a href="http://localhost:1313/post/detect-long-running-transaction/">
+    <h2 class="post-title">MySQL の LockWaitTimeout エラーを調査する方法</h2>
   </a>
   <div class="post-entry">
+    
+      <p>はじめに MySQL を使用している環境で、LockWaitTimeout エラーが発生して困った経験はないでしょうか。 LockWaitTimeout エラーは「あるプロセスが長時間ロックを保持 → 他のプロセスがロックを取得できずにタイムアウトする」という流れで発生することが多いです。
+こうした問題を根本的に解決するには「長時間ロックを保持しているトランザクションを特定する」ことが第一歩となります。 しかし、実行中のクエリであればロギングして原因調査しやすいものの、クエリが完了してしまうと追跡および調査が難しくなります。そこで、実行時間が一定の閾値（今回は 30 秒）を超えたトランザクションを検知し、ログとして残す仕組みを用意しておけば、発生時点のトランザクション情報を確認できるため、原因特定が非常にスムーズになります。
+調査アプローチの概要 長時間実行中のトランザクションを検知してログを残すクラス（e.g. LongTransactionLogger）を用意。 10 秒間隔など、一定周期で LongTransactionLogger を呼び出すジョブをバックグラウンドで実行。 30 秒以上実行中のトランザクションがあれば、その情報をアプリケーションログに出力する。 LockWaitTimeout エラー発生時にログを確認すれば、どのトランザクションが長時間ロックを保持していたか調査が可能。 この仕組みにより、LockWaitTimeout エラーの原因を迅速に追跡・対策できるようになります。
+実装例 下記は、Ruby on Rails 環境で ActiveRecord を利用しているケースを想定したサンプルコードです。 information_schema.innodb_trx や performance_schema テーブルを参照し、実行中のトランザクションを取得しています。
+# frozen_string_literal: true class LongTransactionLogger LONG_RUNNING_THRESHOLD_SECONDS = 30 private_constant :LONG_RUNNING_THRESHOLD_SECONDS TrxStruct = Struct.new( :trx_id, :trx_mysql_thread_id, :trx_query, :trx_started, :duration, :sql_text, :event_name, :event_id, :lock_time, keyword_init: true ) def check_and_save_log log_transactions(long_running_transactions) end private def long_running_transactions results = ActiveRecord::Base.</p>
+      <a href="http://localhost:1313/post/detect-long-running-transaction/" class="post-read-more"
+        ></a
+      >
     
   </div>
 
   <div class="postmeta">
     <span class="meta-post">
   <em class="fa fa-calendar-alt"></em
-  >&nbsp;Dec 27, 2024
+  >&nbsp;Mar 20, 2025
   
 </span>
 
@@ -329,7 +338,7 @@
     <p class="credits copyright">
       <a href="http://localhost:1313/about">Atsuki Narita</a>
       &nbsp;&copy;
-      2024
+      2025
       
         &nbsp;/&nbsp;
         <a href="http://localhost:1313/">7riatsu blog</a>
