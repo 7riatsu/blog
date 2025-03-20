@@ -2,79 +2,76 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>http://localhost:1313/about/</loc>
+    <loc>https://7riatsu.com/about/</loc>
   </url><url>
-    <loc>http://localhost:1313/</loc>
+    <loc>https://7riatsu.com/</loc>
     <lastmod>2025-03-20T12:22:34+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/db/</loc>
+    <loc>https://7riatsu.com/tags/db/</loc>
     <lastmod>2025-03-20T12:22:34+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/mysql/</loc>
+    <loc>https://7riatsu.com/tags/mysql/</loc>
     <lastmod>2025-03-20T12:22:34+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/detect-long-running-transaction/</loc>
+    <loc>https://7riatsu.com/post/detect-long-running-transaction/</loc>
     <lastmod>2025-03-20T12:22:34+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/</loc>
+    <loc>https://7riatsu.com/post/</loc>
     <lastmod>2025-03-20T12:22:34+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/</loc>
+    <loc>https://7riatsu.com/tags/</loc>
     <lastmod>2025-03-20T12:22:34+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/toeic-score-improvement/</loc>
+    <loc>https://7riatsu.com/post/toeic-score-improvement/</loc>
     <lastmod>2023-04-04T22:56:34+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/english/</loc>
+    <loc>https://7riatsu.com/tags/english/</loc>
     <lastmod>2023-04-04T22:56:34+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/toeic/</loc>
+    <loc>https://7riatsu.com/tags/toeic/</loc>
     <lastmod>2023-04-04T22:56:34+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/posts/</loc>
+    <loc>https://7riatsu.com/posts/</loc>
     <lastmod>2023-04-04T21:30:51+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/posts/test/</loc>
-    <lastmod>2023-04-04T21:30:51+09:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/database/</loc>
+    <loc>https://7riatsu.com/tags/database/</loc>
     <lastmod>2021-12-17T00:00:00+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/index/</loc>
+    <loc>https://7riatsu.com/tags/index/</loc>
     <lastmod>2021-12-17T00:00:00+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/mysql-indexing-mechanism/</loc>
+    <loc>https://7riatsu.com/post/mysql-indexing-mechanism/</loc>
     <lastmod>2021-12-17T00:00:00+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/server-development/</loc>
+    <loc>https://7riatsu.com/tags/server-development/</loc>
     <lastmod>2021-12-17T00:00:00+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/poem/</loc>
+    <loc>https://7riatsu.com/tags/poem/</loc>
     <lastmod>2021-05-23T14:36:42+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/becoming-a-member-of-society/</loc>
+    <loc>https://7riatsu.com/post/becoming-a-member-of-society/</loc>
     <lastmod>2021-05-23T14:36:42+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/new-grad-job-hunting-result/</loc>
+    <loc>https://7riatsu.com/post/new-grad-job-hunting-result/</loc>
     <lastmod>2020-12-06T00:00:00+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/career/</loc>
+    <loc>https://7riatsu.com/tags/career/</loc>
     <lastmod>2020-12-06T00:00:00+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/new-graduates/</loc>
+    <loc>https://7riatsu.com/tags/new-graduates/</loc>
     <lastmod>2020-12-06T00:00:00+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/hello/</loc>
+    <loc>https://7riatsu.com/post/hello/</loc>
     <lastmod>2020-09-27T20:52:41+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/archives/</loc>
+    <loc>https://7riatsu.com/archives/</loc>
   </url><url>
-    <loc>http://localhost:1313/categories/</loc>
+    <loc>https://7riatsu.com/categories/</loc>
   </url><url>
-    <loc>http://localhost:1313/page/</loc>
+    <loc>https://7riatsu.com/page/</loc>
   </url><url>
-    <loc>http://localhost:1313/search/</loc>
+    <loc>https://7riatsu.com/search/</loc>
   </url><url>
-    <loc>http://localhost:1313/search/</loc>
+    <loc>https://7riatsu.com/search/</loc>
   </url>
 </urlset>

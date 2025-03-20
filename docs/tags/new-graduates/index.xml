@@ -1,7 +1,7 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 	<channel>
 		<title>New-Graduates on 7riatsu blog</title>
-		<link>http://localhost:1313/tags/new-graduates/</link>
+		<link>https://7riatsu.com/tags/new-graduates/</link>
 		<description>Recent content in New-Graduates </description>
 		<generator>Hugo -- gohugo.io</generator>
 		
@@ -15,53 +15,49 @@
 		
 		<item>
 			<title>MySQL の LockWaitTimeout エラーを調査する方法</title>
-			<link>http://localhost:1313/post/detect-long-running-transaction/</link>
+			<link>https://7riatsu.com/post/detect-long-running-transaction/</link>
 			<pubDate>Thu, 20 Mar 2025 12:22:34 +0900</pubDate>
-			<guid>http://localhost:1313/post/detect-long-running-transaction/</guid>
-			<description>はじめに MySQL を使用している環境で、LockWaitTimeout エラーが発生して困った経験はないでしょうか。 LockWaitTimeout エラーは「あるプロセスが長時間ロックを保持 → 他のプロセスがロックを取得できずにタイムアウトする」という流れで発生することが多いです。
-こうした問題を根本的に解決するには「長時間ロックを保持しているトランザクションを特定する」ことが第一歩となります。 しかし、実行中のクエリであればロギングして原因調査しやすいものの、クエリが完了してしまうと追跡および調査が難しくなります。そこで、実行時間が一定の閾値（今回は 30 秒）を超えたトランザクションを検知し、ログとして残す仕組みを用意しておけば、発生時点のトランザクション情報を確認できるため、原因特定が非常にスムーズになります。
-調査アプローチの概要 長時間実行中のトランザクションを検知してログを残すクラス（e.g. LongTransactionLogger）を用意。 10 秒間隔など、一定周期で LongTransactionLogger を呼び出すジョブをバックグラウンドで実行。 30 秒以上実行中のトランザクションがあれば、その情報をアプリケーションログに出力する。 LockWaitTimeout エラー発生時にログを確認すれば、どのトランザクションが長時間ロックを保持していたか調査が可能。 この仕組みにより、LockWaitTimeout エラーの原因を迅速に追跡・対策できるようになります。
-実装例 下記は、Ruby on Rails 環境で ActiveRecord を利用しているケースを想定したサンプルコードです。 information_schema.innodb_trx や performance_schema テーブルを参照し、実行中のトランザクションを取得しています。
-# frozen_string_literal: true class LongTransactionLogger LONG_RUNNING_THRESHOLD_SECONDS = 30 private_constant :LONG_RUNNING_THRESHOLD_SECONDS TrxStruct = Struct.new( :trx_id, :trx_mysql_thread_id, :trx_query, :trx_started, :duration, :sql_text, :event_name, :event_id, :lock_time, keyword_init: true ) def check_and_save_log log_transactions(long_running_transactions) end private def long_running_transactions results = ActiveRecord::Base.</description>
+			<guid>https://7riatsu.com/post/detect-long-running-transaction/</guid>
+			<description></description>
 		</item>
       	
 		<item>
 			<title>2ヶ月で英語の基礎力を鍛え、TOEICスコアを150点上げた方法</title>
-			<link>http://localhost:1313/post/toeic-score-improvement/</link>
+			<link>https://7riatsu.com/post/toeic-score-improvement/</link>
 			<pubDate>Tue, 04 Apr 2023 22:56:34 +0900</pubDate>
-			<guid>http://localhost:1313/post/toeic-score-improvement/</guid>
+			<guid>https://7riatsu.com/post/toeic-score-improvement/</guid>
 			<description></description>
 		</item>
       	
 		<item>
 			<title>MySQL のインデックスの仕組み調べてみた</title>
-			<link>http://localhost:1313/post/mysql-indexing-mechanism/</link>
+			<link>https://7riatsu.com/post/mysql-indexing-mechanism/</link>
 			<pubDate>Fri, 17 Dec 2021 00:00:00 +0900</pubDate>
-			<guid>http://localhost:1313/post/mysql-indexing-mechanism/</guid>
+			<guid>https://7riatsu.com/post/mysql-indexing-mechanism/</guid>
 			<description></description>
 		</item>
       	
 		<item>
 			<title>社会人になった所感</title>
-			<link>http://localhost:1313/post/becoming-a-member-of-society/</link>
+			<link>https://7riatsu.com/post/becoming-a-member-of-society/</link>
 			<pubDate>Sun, 23 May 2021 14:36:42 +0900</pubDate>
-			<guid>http://localhost:1313/post/becoming-a-member-of-society/</guid>
+			<guid>https://7riatsu.com/post/becoming-a-member-of-society/</guid>
 			<description></description>
 		</item>
       	
 		<item>
 			<title>21新卒ソフトウェアエンジニア職の就活振り返り</title>
-			<link>http://localhost:1313/post/new-grad-job-hunting-result/</link>
+			<link>https://7riatsu.com/post/new-grad-job-hunting-result/</link>
 			<pubDate>Sun, 06 Dec 2020 00:00:00 +0900</pubDate>
-			<guid>http://localhost:1313/post/new-grad-job-hunting-result/</guid>
+			<guid>https://7riatsu.com/post/new-grad-job-hunting-result/</guid>
 			<description></description>
 		</item>
       	
 		<item>
 			<title>Hello World!</title>
-			<link>http://localhost:1313/post/hello/</link>
+			<link>https://7riatsu.com/post/hello/</link>
 			<pubDate>Sun, 27 Sep 2020 20:52:41 +0900</pubDate>
-			<guid>http://localhost:1313/post/hello/</guid>
+			<guid>https://7riatsu.com/post/hello/</guid>
 			<description></description>
 		</item>
       	
