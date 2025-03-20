@@ -9,7 +9,9 @@ I'm Atsuki Narita, a software engineer with a strong focus on server-side develo
 
 ## Experience
 ### Timee, Inc. [Jan 2024 - Current]
-- Working as a backend engineer, responsible for developing and maintaining server-side applications.
+- Responsible for backend development of Timee, a leading spot work service with over 10 million downloads.
+- Designing and developing an ID platform. Conducting research on standards such as RFCs, OpenID Connect Core, and security guidelines like OWASP.
+- Working across backend applications, infrastructure layers, and frontend development. Implementing solutions using Go, Terraform, and TypeScript.
 
 ### DeNA Co., Ltd. [Apr 2021 – Dec 2023]
 - Built and maintained an application with over 4M downloads, requiring communication with cross-functional teams regarding product and customer success.
@@ -37,7 +39,7 @@ I'm Atsuki Narita, a software engineer with a strong focus on server-side develo
 - Joined as a product manager intern during the launch of a new travel business at Mercari (Product: mertrip).
 - Developed product specifications based on usability tests and conducted competitive analysis of domestic and foreign companies.
 
-## Speaking Engagements and Publications
+## Presentations and Publications
 
 ### DeNA TechCon 2023
 - Presented at DeNA TechCon 2023, a major technology conference, discussing innovations and challenges in server-side development. The presentation titled "新卒1年目が100億レコード超のDBマイグレーションをした話" focused on the challenges and methodologies of database migration in a high-scale environment, particularly handling over 10 billion records without downtime and enhancing table indexing and partitioning to improve search speeds and overall database performance.

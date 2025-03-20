@@ -28,6 +28,13 @@ share: true
 
 # Release
 
+```sh
+# build
+hugo
+
+# commit and push
+git push
+```
 
 # References
 [HUGO Quick start](https://gohugo.io/getting-started/quick-start/)
